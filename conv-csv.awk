@@ -3,14 +3,17 @@
 #######################################################################
 BEGIN{
 	# Set Output File Name
-	Output_Path = "" ;		# Output Path Name
-	Output_CPU	= "" ;		# CPU Performance File Name
+	Output_Path 	= "" ;		# Output Path Name
+	Output_CPU		= "" ;		# CPU Performance File Name
+	Output_Paging	= "" ;		# Paging Performance File Name
 
 	# Header Flag
-	Header_CPU	= "OFF" ;	# CPU Information Header
+	Header_CPU		= "OFF" ;	# CPU Information Header
+	Header_Paging	= "OFF" ;	# Paging Information Header
 
 	# Control Flag
-	CPU_Flag	= 0.0 ;		# CPU Conrol Flag
+	CPU_Flag		= 0.0 ;		# CPU Conrol Flag
+	Paging_Flag		= 0.0 ;		# Paging Conrol Flag
 
 }
 
@@ -47,6 +50,7 @@ END{
 
 		# Set Output File Name
 		Output_CPU = Output_Path "sar_CPU.csv" ;
+		Output_Paging = Output_Path "sar_Paging.csv" ;
 
 	}
 }
@@ -59,6 +63,7 @@ END{
 	# Reset value
 	time		= "" ;
 	CPU_Flag	= 0.0 ;
+	Paging_Flag	= 0.0 ;
 
 	# Next Line
 	next ;
@@ -190,6 +195,104 @@ CPU_Flag == 2.0 {
 		>> Output_CPU ;
 
 	CPU_Flag = 1.0 ;
+
+	next ;
+
+}
+#######################################################################
+#	Report paging statistics.(-B)
+#		time		:
+#		pgpgin/s	:
+#					Total number of kilobytes the system paged in from
+#					disk per second.
+#		pgpgout/s	:
+#					Total number of kilobytes the system paged out
+#					to disk per second.
+#		fault/s		:
+#					Number of page faults (major+minor) made by the
+#					system per second.
+#		majflt/s	:
+#					Number of major faults the system has mde 
+#					per second.
+#		pgfree/s	:
+#					Number of pages placed on the free list by the 
+#					system per second.
+#		pgscank/s	:
+#					Number of pages scanned by the kswapd daemon 
+#					per second.
+#		pgscand/s	:
+#					Number of pages scanned directly per second.
+#		pgsteal/s	:
+#					Number of pages the system has reclaimed from
+#					cache (pagecache and swapcache) per second to
+#					satisfy its memory demands.
+#		%vmeff		:
+#					Calculated as pgsteal / pgscan, this is a metric
+#					of the efficiency of page reclaim.
+#######################################################################
+##### CPU Information Check
+$2 ~ /^pgpgin\/s/ {
+
+	Paging_Flag = 1.0 ;
+
+	# Next Line
+	next ;
+
+}
+
+##### Get Value
+Paging_Flag == 1.0 {
+
+	time		= $1 ;
+	pgpgin		= $2 ;
+	pgpgout		= $3 ;
+	fault		= $4 ;
+	majflt		= $5 ;
+	pgfree		= $6 ;
+	pgscank		= $7 ;
+	pgscand		= $8 ;
+	pgsteal		= $9 ;
+	vmeff		= $10 ;
+
+	Paging_Flag = 2.0 ;
+
+}
+
+##### Set Header
+Paging_Flag == 2.0 {
+
+	if( Header_Paging != "ON" ) {
+		print \
+			"time," \
+			"pgpgin/s," \
+			"pgpgout/s," \
+			"fault/s," \
+			"majflt/s," \
+			"pgfree/s," \
+			"pgscank/s," \
+			"pgscand/s," \
+			"pgsteal/s," \
+			"%vmeff," \
+			> Output_Paging ;
+
+		Header_Paging = "ON" ;
+
+	}
+
+	printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\n",
+		time,
+		pgpgin,
+		pgpgout,
+		fault,
+		majflt,
+		pgfree,
+		pgscank,
+		pgscand,
+		pgsteal,
+		vmeff \
+		>> Output_Paging ;
+
+	Paging_Flag = 1.0 ;
 
 	next ;
 
