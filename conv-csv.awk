@@ -54,6 +54,7 @@ END{
 		# Set Output File Name
 		Output_CPU = Output_Path "sar_CPU.csv" ;
 		Output_Paging = Output_Path "sar_Paging.csv" ;
+		Output_IO = Output_Path "sar_IO.csv" ;
 
 	}
 }
@@ -67,6 +68,7 @@ END{
 	time		= "" ;
 	CPU_Flag	= 0.0 ;
 	Paging_Flag	= 0.0 ;
+	IO_Flag	= 0.0 ;
 
 	# Next Line
 	next ;
@@ -383,7 +385,7 @@ IO_Flag == 2.0 {
 		bdscd \
 		>> Output_IO ;
 
-	Paging_IO = 1.0 ;
+	IO_Flag = 1.0 ;
 
 	next ;
 
