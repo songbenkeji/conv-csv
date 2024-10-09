@@ -6,14 +6,17 @@ BEGIN{
 	Output_Path 	= "" ;		# Output Path Name
 	Output_CPU		= "" ;		# CPU Performance File Name
 	Output_Paging	= "" ;		# Paging Performance File Name
+	Output_IO		= "" ;		# I/O and transfer Performance File Name
 
 	# Header Flag
 	Header_CPU		= "OFF" ;	# CPU Information Header
 	Header_Paging	= "OFF" ;	# Paging Information Header
+	Header_IO		= "OFF" ;	# I/O and transfer Information Header
 
 	# Control Flag
 	CPU_Flag		= 0.0 ;		# CPU Conrol Flag
 	Paging_Flag		= 0.0 ;		# Paging Conrol Flag
+	IO_Flag			= 0.0 ;		# I/O and transfer Conrol Flag
 
 }
 
@@ -199,6 +202,7 @@ CPU_Flag == 2.0 {
 	next ;
 
 }
+
 #######################################################################
 #	Report paging statistics.(-B)
 #		time		:
@@ -230,7 +234,7 @@ CPU_Flag == 2.0 {
 #					Calculated as pgsteal / pgscan, this is a metric
 #					of the efficiency of page reclaim.
 #######################################################################
-##### CPU Information Check
+##### Paging Information Check
 $2 ~ /^pgpgin\/s/ {
 
 	Paging_Flag = 1.0 ;
@@ -293,6 +297,93 @@ Paging_Flag == 2.0 {
 		>> Output_Paging ;
 
 	Paging_Flag = 1.0 ;
+
+	next ;
+
+}
+
+#######################################################################
+#	Report I/O and transfer rate statistics.(-b)
+#		time	:
+#		tps		:
+#				Total number of transfer per second that were issued
+#				to physical devices.
+#		rtps	:
+#				Total number of read requests per second issued to 
+#				physical devices.
+#		wtps	:
+#				Total number of write requests per second issued to
+#				physical devices.
+#		dtps	:
+#				Total number of discard requests per second issued to
+#				physical devices.
+#		bread/s	:
+#				Total amount of data read from the devices in blocks 
+#				per second.
+#		bwrtn/s	:
+#				Total amount of data written to devices in blocks
+#				per seconds.
+#		bdscd/s	:
+#				Total amount of data discarded for devices in blocks
+#				per second.
+#######################################################################
+##### I/O and transfer rate Information Check
+$2 ~ /^tps/ {
+
+	IO_Flag = 1.0 ;
+
+	# Next Line
+	next ;
+
+}
+
+##### Get Value
+IO_Flag == 1.0 {
+
+	time	= $1 ;
+	tps		= $2 ;
+	rtps	= $3 ;
+	wtps	= $4 ;
+	dtps	= $5 ;
+	bread	= $6 ;
+	bwrtn	= $7 ;
+	bdscd	= $8 ;
+
+	IO_Flag = 2.0 ;
+
+}
+
+##### Set Header
+IO_Flag == 2.0 {
+
+	if( Header_IO != "ON" ) {
+		print \
+			"time," \
+			"tps," \
+			"rtps," \
+			"wtps," \
+			"dtps," \
+			"bread/s," \
+			"bwrtn/s," \
+			"bdscd/s," \
+			> Output_IO ;
+
+		Header_IO = "ON" ;
+
+	}
+
+	printf "%s,%s,%s,%s,%s,%s,%s,%s,\n",
+		time,
+		tps,
+		rtps,
+		wtps,
+		dtps,
+		bread,
+		bwrtn,
+		bdscd \
+		>> Output_IO ;
+
+	Paging_IO = 1.0 ;
 
 	next ;
 
